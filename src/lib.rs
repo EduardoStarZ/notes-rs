@@ -3,7 +3,9 @@ pub mod schema;
 
 use diesel::prelude::*;
 use dotenvy::dotenv;
-use self::models::{NewUser, User};
+use self::models::User;
+
+use self::models::NewUser;
 use std::env;
 
 
@@ -15,14 +17,31 @@ pub fn establish_connection() -> SqliteConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-pub fn create_post(conn: &mut SqliteConnection, id: &i32, name: &String) -> User {
-    use crate::schema::users;
+pub fn list_users(connection : &mut SqliteConnection) {
+    use self::schema::users::dsl::*;
+    let result : Vec<User> = users.select(User::as_select()).load(connection).expect("Error loading users from database");
 
-     let new_user = NewUser { id, name };
+    println!("Showing all users within the database, there are currently {} users", result.len());
+
+    for x in result {
+        println!("ID: {}\n-------------------\nUser: {}\n\n", x.id, x.name);
+    }
+}
+
+pub fn create_user(connection: &mut SqliteConnection, username: &String) {
+    use self::schema::users::{self, dsl::*};
+
+    let u_id : &i32 = &(users.select(User::as_select()).load(connection).expect("Error loading users from database").len() as i32 + 1);
+
+    let new_user = NewUser { id : u_id, name : username };
 
     diesel::insert_into(users::table)
         .values(&new_user)
-        .returning(User::as_returning())
-        .get_result(conn)
-        .expect("msg")
+        .execute(connection).unwrap();
+}
+
+pub fn delete_user(connection : &mut SqliteConnection, username: &String) {
+    use self::schema::users::{self, dsl::*};
+
+    diesel::delete((users::table).filter(name.eq(username))).execute(connection).unwrap();
 }
