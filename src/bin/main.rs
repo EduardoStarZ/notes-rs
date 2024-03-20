@@ -1,18 +1,11 @@
 use diesel::prelude::*;
-use notes::models::*;
 use notes::*;
 use std::env;
 
 fn main() {
-    // use self::schema::users::dsl::*;
-
-    // let connection = &mut establish_connection();
-    // let internal_handler = &mut establish_connection();
-
-    // println!("Type the name of the user: ");
-    // create_user(connection, &get_input());
-
-    // list_users(connection);
+    let connection = &mut establish_connection();
+    
+    process_arg(connection, get_args());                                    
 }
 
 fn get_args() -> Vec<String> {
@@ -25,9 +18,21 @@ fn get_args() -> Vec<String> {
     return args;
 }
 
-fn process_arg(connection: &mut SqliteConnection, args: Vec<&str>) {
-    match args[0] {
-        "create" => match args[1] {
+fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
+    if args.len() == 0 {
+        return;
+    }
+
+    if args.contains(&"list".to_string()) {
+        list_users(connection);
+
+        if args.len() == 1 {
+            return;
+        }
+    }
+
+    match args[0].as_str() {
+        "create" => match args[1].as_str() {
             "user" => {
                 if !args[2].is_empty() {
                     create_user(connection, &args[2].to_string())
@@ -35,7 +40,12 @@ fn process_arg(connection: &mut SqliteConnection, args: Vec<&str>) {
             }
             _ => ()
         },
-        "delete" => {}
+        "delete" => match args[1].as_str() {
+            "user" => if !args[2].is_empty() {
+                delete_user(connection, &args[2])
+            },
+            _ => () 
+        }
         _ => (),
     }
 }
