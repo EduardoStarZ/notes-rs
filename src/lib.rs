@@ -45,3 +45,13 @@ pub fn delete_user(connection : &mut SqliteConnection, username: &String) {
 
     diesel::delete((users::table).filter(name.eq(username))).execute(connection).unwrap();
 }
+
+pub fn rearange_user_ids(connection: &mut SqliteConnection, start : &u32) {
+    use self::schema::users::{self, dsl::*};
+
+    let size : i32 = users.select(User::as_select()).load(connection).expect("Error loading users from database").len() as i32;
+
+    for x in *start..size as u32 + 1{
+        diesel::update(users::table).filter(id.eq(x as i32)).set(id.eq(id-1)).execute(connection).unwrap();
+    }
+}

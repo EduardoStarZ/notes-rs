@@ -1,6 +1,7 @@
 use diesel::prelude::*;
 use notes::*;
 use std::env;
+use self::models::User;
 
 fn main() {
     let connection = &mut establish_connection();
@@ -19,6 +20,8 @@ fn get_args() -> Vec<String> {
 }
 
 fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
+    use self::schema::users::dsl::*;
+
     if args.len() == 0 {
         return;
     }
@@ -42,7 +45,10 @@ fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
         },
         "delete" => match args[1].as_str() {
             "user" => if !args[2].is_empty() {
-                delete_user(connection, &args[2])
+                    let users_db : Vec<User> = users.select(User::as_select()).filter(name.eq(args[2].clone())).load(connection).expect("value does not exist at the user table in database");       
+                    delete_user(connection, &args[2]);
+                rearange_user_ids(connection, &(users_db[0].id as u32));
+            
             },
             _ => () 
         }
