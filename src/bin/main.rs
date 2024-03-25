@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use notes::*;
 use std::env;
-use self::models::User;
+use self::models::{User, Note};
 
 fn main() {
     let connection = &mut establish_connection();
