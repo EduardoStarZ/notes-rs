@@ -7,3 +7,4 @@ edition = "2021"
 
 diesel = {version="2.1.5", features=["sqlite"]}
 dotenvy = "0.15"
+rand = "0.8.5"

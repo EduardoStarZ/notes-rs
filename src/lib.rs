@@ -4,10 +4,15 @@ pub mod schema;
 use diesel::prelude::*;
 use dotenvy::dotenv;
 use self::models::User;
+use self::models::Note;
 
 use self::models::NewUser;
 use std::env;
+use rand::Rng;
 
+fn generate_UUID() -> i32 {
+    use self::schema::{users::{self, dsl::*}, note}
+}
 
 pub fn establish_connection() -> SqliteConnection {
     dotenv().ok();
@@ -21,6 +26,11 @@ pub fn list_users(connection : &mut SqliteConnection) {
     use self::schema::users::dsl::*;
     let result : Vec<User> = users.select(User::as_select()).load(connection).expect("Error loading users from database");
 
+    if result.is_empty() {
+        println!("There are no users registered");
+        return;
+    }
+
     println!("Showing all users within the database, there are currently {} users", result.len());
 
     for x in result {
@@ -29,11 +39,13 @@ pub fn list_users(connection : &mut SqliteConnection) {
 }
 
 pub fn create_user(connection: &mut SqliteConnection, username: &String) {
-    use self::schema::users::{self, dsl::*};
+    use self::schema::users;
 
-    let u_id : &i32 = &(users.select(User::as_select()).load(connection).expect("Error loading users from database").len() as i32 + 1);
+    let mut rng = rand::thread_rng();
+    
+    let uuid = rng.gen::<u32>();
 
-    let new_user = NewUser { id : u_id, name : username };
+    let new_user = NewUser { id : &(uuid as i32), name : &username.trim().to_string() };
 
     diesel::insert_into(users::table)
         .values(&new_user)
@@ -46,12 +58,12 @@ pub fn delete_user(connection : &mut SqliteConnection, username: &String) {
     diesel::delete((users::table).filter(name.eq(username))).execute(connection).unwrap();
 }
 
-pub fn rearange_user_ids(connection: &mut SqliteConnection, start : &u32) {
+pub fn edit_user(connection: &mut SqliteConnection, previous_name : &String , new_name: &String) {
     use self::schema::users::{self, dsl::*};
 
-    let size : i32 = users.select(User::as_select()).load(connection).expect("Error loading users from database").len() as i32;
+    diesel::update(users::table).filter(name.eq(previous_name)).set(name.eq(new_name)).execute(connection).expect("could not load user from database");
+}
 
-    for x in *start..size as u32 + 1{
-        diesel::update(users::table).filter(id.eq(x as i32)).set(id.eq(id-1)).execute(connection).unwrap();
-    }
+pub fn create_note(connection : SqliteConnection, name : &String, content : &String) {
+
 }
