@@ -1,0 +1,15 @@
+-- Your SQL goes here
+DROP TABLE IF EXISTS `notes`;
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `note`(
+	`id` INTEGER NOT NULL PRIMARY KEY,
+	`name` TEXT NOT NULL,
+	`content` TEXT NOT NULL,
+	`user_id` INTEGER NOT NULL
+);
+
+CREATE TABLE `user`(
+	`id` INTEGER NOT NULL PRIMARY KEY,
+	`name` TEXT NOT NULL
+);
+

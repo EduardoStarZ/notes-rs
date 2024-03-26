@@ -1,22 +1,23 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    notes (id) {
+    note (id) {
         id -> Integer,
         name -> Text,
         content -> Text,
-        user_id -> Integer
+        user_id -> Integer,
     }
 }
 
 diesel::table! {
-    users (id) {
+    user (id) {
         id -> Integer,
         name -> Text,
+        active -> Bool,
     }
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    notes,
-    users,
+    note,
+    user,
 );
