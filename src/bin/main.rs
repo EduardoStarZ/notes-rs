@@ -1,6 +1,7 @@
 use self::models::{Note, User};
 use self::schema::note::{self, dsl::*};
 use self::schema::user::{self, dsl::*};
+use colored::Colorize;
 use diesel::prelude::*;
 use notes::*;
 use std::env;
@@ -57,14 +58,19 @@ fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
             }
             "note" => {
                 if !args[2].is_empty() {
-                    let results: Vec<Note> = note
+                    let result: Vec<Note> = note
                         .select(Note::as_select())
                         .filter(note::name.eq(args[2].trim().to_string().clone()))
                         .load(connection)
                         .expect("could not load notes from database");
 
-                    if results.is_empty() {
+                    if result.is_empty() {
                         create_note(connection, &args[2], &args[3]);
+                    } else {
+                        println!(
+                            "Note with name \'{}\' already exists with ID: {}",
+                            result[0].name, result[0].id
+                        );
                     }
                 }
             }
@@ -105,15 +111,51 @@ fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
                     }
                 }
             }
+            "note" => match args[2].trim() {
+                "name" => {
+                    if !args[3].trim().is_empty() {
+                        let result: Vec<Note> = note
+                            .select(Note::as_select())
+                            .filter(note::name.eq(args[3].trim().to_string().clone()))
+                            .filter(note::user_id.eq(list_current_user()))
+                            .load(connection)
+                            .expect("could not load users from database");
+
+                        if !result.is_empty() {
+                            edit_note_name(connection, &args[3], &args[4]);
+                        } else {
+                            println!("No note was found with name {}", args[3]);
+                        }
+                    }
+                }
+                "text" => {
+                    if !args[3].trim().is_empty() {
+                        let result: Vec<Note> = note
+                            .select(Note::as_select())
+                            .filter(note::name.eq(args[3].trim().to_string().clone()))
+                            .filter(note::user_id.eq(list_current_user()))
+                            .load(connection)
+                            .expect("could not load users from database");
+
+                        if !result.is_empty() {
+                            edit_note_content(connection, &args[3], &args[4]);
+                        } else {
+                            println!("No note was found with name {}", args[3])
+                        }
+                    }
+                }
+                _ => (),
+            },
             _ => (),
         },
         "help" => {
-            println!("notes <COMMAND> (-flags)");
+            println!("notes <COMMAND> <SUBCOMMAND> (-flags)");
             println!("[create user name || \'name\'] : creates a new user with name the provided name (case sensitive)");
             println!("[delete user name || \'name\'] : deletes the user with the selected name (case sensitive)");
             println!("[edit user previous_name || \'previous_name\' new_name || \'new_name\'] : edit the name of a user with the provided new name, if there isn't another user with same name");
-            println!("[list] : list all users registered");
+            println!("[edit note previous_name || \'previous_name\' new_name || \'new_name\'] : edit the name of a note with the provided new name, if there isn't another note with same name");
+            println!("[list user | note] : list all users/notes registered");
         }
-        _ => (),
+        _ => println!("{}", "some text as bold".bold()),
     }
 }

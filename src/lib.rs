@@ -1,10 +1,11 @@
 pub mod models;
 pub mod schema;
-use self::models::{NewNote, NewUser};
 
+use self::models::{NewNote, NewUser};
 use self::models::{Note, User};
 use self::schema::note::{self, dsl::*};
 use self::schema::user::{self, dsl::*};
+use colored::Colorize;
 use diesel::prelude::*;
 use dotenvy::dotenv;
 use rand::{thread_rng, Rng};
@@ -16,6 +17,18 @@ pub fn establish_connection() -> SqliteConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     SqliteConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+}
+
+pub fn list_current_user() -> i32 {
+    let connection: &mut SqliteConnection = &mut establish_connection();
+
+    let users: Vec<User> = user
+        .select(User::as_select())
+        .filter(user::active.eq(true))
+        .load(connection)
+        .expect("could not load users from database");
+
+    return users[0].id;
 }
 
 pub fn list_user(connection: &mut SqliteConnection) {
@@ -30,14 +43,25 @@ pub fn list_user(connection: &mut SqliteConnection) {
     }
 
     println!(
-        "\n\nShowing all users within the database, there are currently {} users\n",
+        "\n\nShowing all users within the database, there are currently {} users\n\n\n",
         result.len()
     );
 
-    for x in result {
+    for (i, x) in result.iter().enumerate() {
+        let start_icon = format!(
+            "{}{}{}",
+            (i + 1).to_string().bright_black().on_bright_white(),
+            ".".on_bright_white().bright_black(),
+            "=========================".hidden().on_bright_white()
+        );
+        let end_icon = format!(
+            "{}",
+            "===========================".hidden().on_bright_white()
+        );
         println!(
-            "===========================\nID: {}\nUser: {}\n===========================\n",
-            x.id, x.name
+            "{start_icon}\nID: {}\nUser: {}\n{end_icon}\n",
+            x.id.to_string().underline(),
+            x.name.to_string().italic()
         );
     }
 }
@@ -145,10 +169,22 @@ pub fn delete_note(connection: &mut SqliteConnection, note_name: &String) {
         .unwrap();
 }
 
-pub fn edit_note(connection: &mut SqliteConnection, old_name: &String, new_name: &String) {
+pub fn edit_note_name(connection: &mut SqliteConnection, old_name: &String, new_name: &String) {
     diesel::update(note::table)
         .filter(note::name.eq(old_name))
         .set(note::name.eq(new_name))
+        .execute(connection)
+        .expect("could not load notes from database");
+}
+
+pub fn edit_note_content(
+    connection: &mut SqliteConnection,
+    note_name: &String,
+    new_content: &String,
+) {
+    diesel::update(note::table)
+        .filter(note::name.eq(note_name))
+        .set(note::content.eq(new_content))
         .execute(connection)
         .expect("could not load notes from database");
 }
@@ -171,13 +207,27 @@ pub fn list_note(connection: &mut SqliteConnection) {
         return;
     }
 
+    let id_icon = "ID".bold();
+    let name_icon = "Name".bold();
+    let content_icon = "Content".bold();
+
     println!(
-        "\n\nShowing all notes within the database for user {}, there are currently {} notes \n",
-        current_user[0].name,
+        "\n\nShowing all notes within the database for user {}, there are currently {} notes \n\n\n",
+        current_user[0].name.underline(),
         result.len()
     );
 
-    for x in result {
-        println!("\n===========================\nID: {}\nName: {}\nContent: \n\n\" {} \"\n\n===========================", x.id, x.name, x.content);
+    for (i, x) in result.iter().enumerate() {
+        let start_icon = format!(
+            "{}{}{}",
+            (i + 1).to_string().bright_black().on_bright_white(),
+            ".".on_bright_white().bright_black(),
+            "=========================".hidden().on_bright_white()
+        );
+        let end_icon = format!(
+            "{}",
+            "===========================".hidden().on_bright_white()
+        );
+        println!("{start_icon}\n{id_icon}: {}\n{name_icon}: {}\n{content_icon}: \n\n\t {} \n\n{end_icon}\n\n", x.id.to_string().underline(), x.name.italic(), x.content.on_bright_black());
     }
 }

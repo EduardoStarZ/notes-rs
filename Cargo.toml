@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+colored = "2.1.0"
 
 diesel = {version="2.1.5", features=["sqlite"]}
 dotenvy = "0.15"
