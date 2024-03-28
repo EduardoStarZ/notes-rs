@@ -1,7 +1,7 @@
 use crate::establish_connection;
 use crate::models::NewUser;
-use crate::models::User;
-use crate::schema::user::{self, dsl::*};
+use crate::models::Profile;
+use crate::schema::profile::{self, dsl::*};
 use colored::Colorize;
 use diesel::prelude::*;
 use rand::Rng;
@@ -9,9 +9,9 @@ use rand::Rng;
 pub fn list_current_user() -> i32 {
     let connection: &mut SqliteConnection = &mut establish_connection();
 
-    let users: Vec<User> = user
-        .select(User::as_select())
-        .filter(user::active.eq(true))
+    let users: Vec<Profile> = profile
+        .select(Profile::as_select())
+        .filter(profile::active.eq(true))
         .load(connection)
         .expect("could not load users from database");
 
@@ -19,8 +19,8 @@ pub fn list_current_user() -> i32 {
 }
 
 pub fn list_user(connection: &mut SqliteConnection) {
-    let result: Vec<User> = user
-        .select(User::as_select())
+    let result: Vec<Profile> = profile
+        .select(Profile::as_select())
         .load(connection)
         .expect("Error loading users from database");
 
@@ -59,9 +59,9 @@ fn user_uuid(connection: &mut SqliteConnection) -> u32 {
     loop {
         let uuid = rng.gen::<u32>();
 
-        let results: Vec<User> = user
-            .select(User::as_select())
-            .filter(user::id.eq(&(uuid as i32)))
+        let results: Vec<Profile> = profile
+            .select(Profile::as_select())
+            .filter(profile::id.eq(&(uuid as i32)))
             .load(connection)
             .expect("could not load users from database");
 
@@ -72,55 +72,51 @@ fn user_uuid(connection: &mut SqliteConnection) -> u32 {
 }
 
 pub fn create_user(connection: &mut SqliteConnection, username: &String) {
-    let mut is_there_default_user: bool = false;
-    {
-        let results: Vec<User> = user
-            .select(User::as_select())
-            .load(connection)
-            .expect("could not load users from database");
+    let results: Vec<Profile> = profile
+        .select(Profile::as_select())
+        .load(connection)
+        .expect("could not load users from database");
 
-        if results.is_empty() {
-            is_there_default_user = true;
-        } else {
-            is_there_default_user = false;
-        }
-    };
-
-    let new_user = NewUser {
+    
+    let mut new_user : NewUser<'_> = NewUser {
         id: &(user_uuid(connection) as i32),
         name: &username.trim().to_string(),
-        active: &is_there_default_user,
+        active: &false,
     };
 
-    diesel::insert_into(user::table)
+    if results.is_empty() {
+        new_user.active = &true;
+    }
+
+    diesel::insert_into(profile::table)
         .values(&new_user)
         .execute(connection)
         .unwrap();
 }
 
 pub fn delete_user(connection: &mut SqliteConnection, username: &String) {
-    diesel::delete((user::table).filter(user::name.eq(username)))
+    diesel::delete((profile::table).filter(profile::name.eq(username)))
         .execute(connection)
         .unwrap();
 }
 
 pub fn edit_user(connection: &mut SqliteConnection, previous_name: &String, new_name: &String) {
-    diesel::update(user::table)
-        .filter(user::name.eq(previous_name))
-        .set(user::name.eq(new_name))
+    diesel::update(profile::table)
+        .filter(profile::name.eq(previous_name))
+        .set(profile::name.eq(new_name))
         .execute(connection)
         .expect("could not load users from database");
 }
 
 pub fn activate_user(connection: &mut SqliteConnection, username: &String) {
-    diesel::update(user::table)
-        .filter(user::active.eq(true))
+    diesel::update(profile::table)
+        .filter(profile::active.eq(true))
         .set(active.eq(false))
         .execute(connection)
         .expect("could not load user from database");
 
-    diesel::update(user::table)
-        .filter(user::name.eq(username))
+    diesel::update(profile::table)
+        .filter(profile::name.eq(username))
         .set(active.eq(true))
         .execute(connection)
         .expect("could not load user from database");

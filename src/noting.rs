@@ -1,7 +1,7 @@
-use crate::models::NewNote;
-use crate::models::{Note, User};
+use crate::models::NewProfile;
+use crate::models::{Note, Profile};
 use crate::schema::note::{self, dsl::*};
-use crate::schema::user::{self, dsl::*};
+use crate::schema::profile::{self, dsl::*};
 use colored::Colorize;
 use diesel::prelude::*;
 use rand::Rng;
@@ -24,17 +24,17 @@ pub fn note_uuid(connection: &mut SqliteConnection) -> u32 {
 }
 
 pub fn create_note(connection: &mut SqliteConnection, note_name: &String, text: &String) {    
-    let results: Vec<User> = user
-        .select(User::as_select())
-        .filter(user::active.eq(true))
+    let results: Vec<Profile> = profile
+        .select(Profile::as_select())
+        .filter(profile::active.eq(true))
         .load(connection)
         .expect("could not load users from database");
 
-    let new_note = NewNote {
+    let new_note = NewProfile {
         id: &(note_uuid(connection) as i32),
         name: note_name,
         content: text,
-        user_id: &results[0].id,
+        profile_id: &results[0].id,
     };
 
     diesel::insert_into(note::table)
@@ -71,9 +71,9 @@ pub fn edit_note_content(
 }
 
 pub fn list_note(connection: &mut SqliteConnection) {
-    let current_user: Vec<User> = user
-        .select(User::as_select())
-        .filter(user::active.eq(true))
+    let current_user: Vec<Profile> = profile
+        .select(Profile::as_select())
+        .filter(profile::active.eq(true))
         .load(connection)
         .expect("could not load users from database");
 
@@ -84,7 +84,7 @@ pub fn list_note(connection: &mut SqliteConnection) {
 
     let result: Vec<Note> = note
         .select(Note::as_select())
-        .filter(note::user_id.eq(current_user[0].id))
+        .filter(note::profile_id.eq(current_user[0].id))
         .load(connection)
         .expect("Error loading users from database");
 

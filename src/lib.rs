@@ -1,7 +1,7 @@
 pub mod models;
 pub mod noting;
 pub mod schema;
-pub mod users;
+pub mod profile;
 pub mod processor;
 
 use diesel::prelude::*;
