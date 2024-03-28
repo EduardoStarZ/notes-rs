@@ -16,28 +16,28 @@ pub fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
 
     match args[0].as_str() {
         "list" => match args[1].as_str() {
-            "user" | "users" => list_user(connection),
+            "profile" | "profiles" => list_user(connection),
             "note" | "notes" => list_note(connection),
             _ => (),
         },
         "activate" => {
-            if args[1] == "user" {
+            if args[1] == "profile" {
                 activate_user(connection, &args[2]);
             }
         }
         "create" => match args[1].as_str() {
-            "user" => {
+            "profile" => {
                 if !args[2].is_empty() {
                     let result: Vec<Profile> = profile
                         .select(Profile::as_select())
                         .filter(profile::name.eq(args[2].trim().to_string().clone()))
                         .load(connection)
-                        .expect("could not load users from database");
+                        .expect("could not load profiles from database");
                     if result.is_empty() {
                         create_user(connection, &args[2]);
                     } else {
                         println!(
-                            "User with name \'{}\' already exists with ID: {}",
+                            "Profile with name \'{}\' already exists with ID: {}",
                             result[0].name, result[0].id
                         );
                     }
@@ -64,7 +64,7 @@ pub fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
             _ => (),
         },
         "delete" => match args[1].as_str() {
-            "user" => {
+            "profile" => {
                 if !args[2].is_empty() {
                     delete_user(connection, &args[2]);
                 }
@@ -77,13 +77,13 @@ pub fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
             _ => (),
         },
         "edit" => match args[1].as_str() {
-            "user" => {
+            "profile" => {
                 if !args[2].trim().is_empty() && !args[3].trim().is_empty() {
                     let result: Vec<Profile> = profile
                         .select(Profile::as_select())
                         .filter(profile::name.eq(args[3].trim().to_string().clone()))
                         .load(connection)
-                        .expect("could not load users from database");
+                        .expect("could not load profiles from database");
                     if result.is_empty() {
                         edit_user(
                             connection,
@@ -92,7 +92,7 @@ pub fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
                         );
                     } else {
                         println!(
-                            "User with name \'{}\' already exists with ID: {}",
+                            "Profile with name \'{}\' already exists with ID: {}",
                             result[0].name, result[0].id
                         );
                     }
@@ -106,7 +106,7 @@ pub fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
                             .filter(note::name.eq(args[3].trim().to_string().clone()))
                             .filter(note::profile_id.eq(list_current_user()))
                             .load(connection)
-                            .expect("could not load users from database");
+                            .expect("could not load profiles from database");
 
                         if !result.is_empty() {
                             edit_note_name(connection, &args[3], &args[4]);
@@ -122,7 +122,7 @@ pub fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
                             .filter(note::name.eq(args[3].trim().to_string().clone()))
                             .filter(note::profile_id.eq(list_current_user()))
                             .load(connection)
-                            .expect("could not load users from database");
+                            .expect("could not load profiles from database");
 
                         if !result.is_empty() {
                             edit_note_content(connection, &args[3], &args[4]);
@@ -143,33 +143,34 @@ pub fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
                 "<SUBCOMMANDS>".bright_cyan(),
                 "--flags".bold()
             );
-            println!("{} :", "CREATE".underline().bright_green());
+            println!("{}:", "CREATE".underline().bright_green());
             println!(
                 "\t~> {} => {}",
-                "user |<NAME> or \"<NAME>\"| ".on_black(),
-                "creates a new user".italic().underline()
+                "profile |<NAME> or \"<NAME>\"| ".on_black(),
+                "creates a new profile".italic().underline()
             );
             println!(
                 "\t~> {} => {}",
                 "note |<NAME> or \"<NAME>\"| & |<CONTENT> or \"<CONTENT>\"| ".on_black(),
                 "creates a new note".italic().underline()
             );
-            println!("{} :", "DELETE".underline().bright_red());
+            println!("{}:", "DELETE".underline().bright_red());
             println!(
                 "\t~> {} => {}",
-                "user |<NAME> or \"<NAME>\"| ".on_black(),
-                "deletes the user".italic().underline()
+                "profile |<NAME> or \"<NAME>\"| ".on_black(),
+                "deletes the profile".italic().underline()
             );
             println!(
                 "\t~> {} => {}",
                 "note |<NAME> or \"<NAME>\"| ".on_black(),
                 "deletes the note".italic().underline()
             );
-            println!("{} :", "EDIT".underline().bright_blue());
+            println!("{}:", "EDIT".underline().bright_blue());
             println!(
                 "\t~> {} => {}",
-                "user |<OLD NAME> or \"<OLD NAME>\"| & |<NEW NAME> or \"<NEW NAME>\"| ".on_black(),
-                "edits an user name".italic().underline()
+                "profile |<OLD NAME> or \"<OLD NAME>\"| & |<NEW NAME> or \"<NEW NAME>\"| "
+                    .on_black(),
+                "edits a profile name".italic().underline()
             );
             println!(
                 "\t~> {} => {}",
@@ -181,16 +182,24 @@ pub fn process_arg(connection: &mut SqliteConnection, args: Vec<String>) {
                 "note text |<NAME> or \"<NAME>\"| ".on_black(),
                 "edits a note content".italic().underline()
             );
-            println!("{} :", "LIST".underline().bright_yellow());
+            println!("{}:", "LIST".underline().bright_yellow());
             println!(
                 "\t~> {} => {}",
-                "user".on_black(),
-                "lists all users".italic().underline()
+                "profile".on_black(),
+                "lists all profiles".italic().underline()
             );
             println!(
                 "\t~> {} => {}",
                 "notes".on_black(),
-                "lists all notes".italic().underline()
+                "lists all notes from the active profile"
+                    .italic()
+                    .underline()
+            );
+            println!("{}:", "ACTIVATE".underline().bright_cyan());
+            println!(
+                "\t~> {} => {}",
+                "profile |<NAME> or \"<NAME>\"| ".on_black(),
+                "activates a profile".italic().underline()
             );
         }
         _ => (),

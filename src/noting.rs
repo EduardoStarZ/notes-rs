@@ -1,4 +1,4 @@
-use crate::models::NewProfile;
+use crate::models::NewNote;
 use crate::models::{Note, Profile};
 use crate::schema::note::{self, dsl::*};
 use crate::schema::profile::{self, dsl::*};
@@ -28,9 +28,9 @@ pub fn create_note(connection: &mut SqliteConnection, note_name: &String, text: 
         .select(Profile::as_select())
         .filter(profile::active.eq(true))
         .load(connection)
-        .expect("could not load users from database");
+        .expect("could not load profiles from database");
 
-    let new_note = NewProfile {
+    let new_note = NewNote {
         id: &(note_uuid(connection) as i32),
         name: note_name,
         content: text,
@@ -75,10 +75,10 @@ pub fn list_note(connection: &mut SqliteConnection) {
         .select(Profile::as_select())
         .filter(profile::active.eq(true))
         .load(connection)
-        .expect("could not load users from database");
+        .expect("could not load profiles from database");
 
     if current_user.is_empty() {
-        println!("\nThere is no active user selected");
+        println!("\nThere is no active profile selected");
         return;
     }
 

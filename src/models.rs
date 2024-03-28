@@ -12,7 +12,7 @@ pub struct Profile {
 
 #[derive(Insertable)]
 #[diesel(table_name = profile)]
-pub struct NewUser<'a> {
+pub struct NewProfile<'a> {
     pub id: &'a i32,
     pub name: &'a str,
     pub active: &'a bool,
@@ -30,7 +30,7 @@ pub struct Note {
 
 #[derive(Insertable)]
 #[diesel(table_name = note)]
-pub struct NewProfile<'a> {
+pub struct NewNote<'a> {
     pub id: &'a i32,
     pub name: &'a str,
     pub content: &'a String,

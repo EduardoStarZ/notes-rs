@@ -1,5 +1,5 @@
 use crate::establish_connection;
-use crate::models::NewUser;
+use crate::models::NewProfile;
 use crate::models::Profile;
 use crate::schema::profile::{self, dsl::*};
 use colored::Colorize;
@@ -22,15 +22,15 @@ pub fn list_user(connection: &mut SqliteConnection) {
     let result: Vec<Profile> = profile
         .select(Profile::as_select())
         .load(connection)
-        .expect("Error loading users from database");
+        .expect("Error loading profiles from database");
 
     if result.is_empty() {
-        println!("\n\nThere are no users registered");
+        println!("\n\nThere are no profiles registered");
         return;
     }
 
     println!(
-        "\n\nShowing all users within the database, there are currently {} users\n\n\n",
+        "\n\nShowing all profiles within the database, there are currently {} profile(s)\n\n\n",
         result.len()
     );
 
@@ -63,7 +63,7 @@ fn user_uuid(connection: &mut SqliteConnection) -> u32 {
             .select(Profile::as_select())
             .filter(profile::id.eq(&(uuid as i32)))
             .load(connection)
-            .expect("could not load users from database");
+            .expect("could not load profiles from database");
 
         if results.is_empty() {
             return uuid;
@@ -75,10 +75,10 @@ pub fn create_user(connection: &mut SqliteConnection, username: &String) {
     let results: Vec<Profile> = profile
         .select(Profile::as_select())
         .load(connection)
-        .expect("could not load users from database");
+        .expect("could not load profiles from database");
 
     
-    let mut new_user : NewUser<'_> = NewUser {
+    let mut new_user : NewProfile<'_> = NewProfile {
         id: &(user_uuid(connection) as i32),
         name: &username.trim().to_string(),
         active: &false,
@@ -105,7 +105,7 @@ pub fn edit_user(connection: &mut SqliteConnection, previous_name: &String, new_
         .filter(profile::name.eq(previous_name))
         .set(profile::name.eq(new_name))
         .execute(connection)
-        .expect("could not load users from database");
+        .expect("could not load profiles from database");
 }
 
 pub fn activate_user(connection: &mut SqliteConnection, username: &String) {
@@ -113,11 +113,11 @@ pub fn activate_user(connection: &mut SqliteConnection, username: &String) {
         .filter(profile::active.eq(true))
         .set(active.eq(false))
         .execute(connection)
-        .expect("could not load user from database");
+        .expect("could not load profiles from database");
 
     diesel::update(profile::table)
         .filter(profile::name.eq(username))
         .set(active.eq(true))
         .execute(connection)
-        .expect("could not load user from database");
+        .expect("could not load profiles from database");
 }
